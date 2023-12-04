@@ -60,12 +60,13 @@ class Block {
      *     or Reject with an error.
      */
     getBData() {
+        let self = this;
         return new Promise((resolve, reject) => {
-            let parsedData = JSON.parse(this.data);
-            let decodedData = hex2ascii(parsedData);
+            let bodyJsonString = Buffer.from(self.body, 'hex').toString();
+            let body = JSON.parse(bodyJsonString);
 
             if (!this.isGenesis()) {
-                resolve(decodedData);
+                resolve(body);
             } else {
                 reject(new Error("The block is Genesis"));
             }

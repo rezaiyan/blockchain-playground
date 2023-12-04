@@ -180,7 +180,7 @@ class Blockchain {
             if (block) {
                 resolve(block);
             } else {
-                resolve(null);
+                reject(null);
             }
         });
     }
@@ -194,25 +194,24 @@ class Blockchain {
     getStarsByWalletAddress(address) {
         let self = this;
         let stars = [];
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
-            for (let index = 0; index < self.chain.length; index++) {
-                const block = self.chain[index];
-
-                let bodyJsonString = Buffer.from(block.body, 'hex').toString();
-                let body = JSON.parse(bodyJsonString);
-                let blockAddress = body.owner;
-
-                if (address === '0' || address === ''){ // Genesis block
-                    stars.push(block);
-                } else if (blockAddress === address) {
-                    stars.push(body);
-                }
-            }
-            if (stars.length > 0) {
-                resolve(stars);
+            if (address == '0') { // Genesis block
+                resolve(await self.getBlockByHeight(0));
             } else {
-                reject(Error('Not found!'));
+                for (let index = 1; index < self.chain.length; index++) {
+                    const block = await self.getBlockByHeight(index);
+                    let body = await block.getBData();
+
+                    if (body.owner === address) {
+                        stars.push(body);
+                    }
+                }
+                if (stars.length > 0) {
+                    resolve(stars);
+                } else {
+                    reject(Error('Not found!'));
+                }
             }
 
         });
