@@ -78,6 +78,10 @@ class Block {
 
     }
 
+    isGenesis() {
+        return this.height === 0;
+    }
+
 }
 
 module.exports.Block = Block;                    // Exposing the Block class as a module
