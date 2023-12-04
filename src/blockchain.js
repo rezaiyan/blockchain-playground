@@ -72,7 +72,7 @@ class Blockchain {
                 block.height = self.chain.length;
 
                 let previousBlockHash = '';
-                if (this.height > 0) {
+                if (self.height > 0) {
                     previousBlockHash = self.chain[self.chain.length - 1].hash;
                 }
                 block.previousBlockHash = previousBlockHash;
@@ -80,7 +80,19 @@ class Blockchain {
 
                 self.chain.push(block);
                 self.height = self.chain.length;
-                resolve(block);
+
+                let errors = self.validateChain();
+                if (errors.length > 0) {
+                    console.error('Error:', errors);
+                    reject(errors);
+                } else {
+                    if (block) {
+                        resolve(block);
+                    } else {
+                        reject(Error('Couldnt add the block!: ' + block));
+                    }
+                }
+
             } catch (error) {
                 console.error('Error:', error);
                 reject(error);
@@ -133,10 +145,11 @@ class Blockchain {
             if (timeElapsed < fiveMinute) {
                 let isVerified = bitcoinMessage.verify(message, address, signature);
                 if (isVerified) {
-                    let block = new BlockClass.Block({
+                    let body = {
                         owner: address,
                         star: star
-                    });
+                    };
+                    let block = new BlockClass.Block(body);
                     resolve(self._addBlock(block));
                 } else {
                     reject(Error('Verification was not successful!'));
@@ -207,11 +220,7 @@ class Blockchain {
                         stars.push(body);
                     }
                 }
-                if (stars.length > 0) {
-                    resolve(stars);
-                } else {
-                    reject(Error('Not found!'));
-                }
+                resolve(stars);
             }
 
         });
@@ -224,22 +233,25 @@ class Blockchain {
      * 2. Each Block should check the with the previousBlockHash
      */
     validateChain() {
-        let self = this;
-        let errorLog = [];
-
         return new Promise(async (resolve, reject) => {
-            for (let index = 0; index < self.chain.length; index++) {
-                const block = self.chain[index];
-                let isBlockValidate = await block.validate();
-                let isChainSafe = index > 0 && self.chain[index - 1].hash === block.previousBlockHash;
+            try {
+                let self = this;
+                let errorLog = [];
+                for (let index = 1; index < self.chain.length; index++) {
+                    const block = self.chain[index];
+                    let isBlockValidate = await block.validate();
+                    let isChainSafe = index > 0 && self.chain[index - 1].hash === block.previousBlockHash;
 
-                if (!isBlockValidate || !isChainSafe) {
-                    errorLog.push(`Block at index ${index} is not valid.`);
+                    if (!isBlockValidate || !isChainSafe) {
+                        errorLog.push(`Block at index ${index} is not valid.`);
+                    }
                 }
-            }
+                resolve(errorLog);
 
-            // Move the resolve outside of the loop
-            resolve(errorLog);
+            } catch (error) {
+                console.error('Error:', error);
+                reject(error);
+            }
         });
     }
 

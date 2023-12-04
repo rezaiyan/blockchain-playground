@@ -41,8 +41,19 @@ class Block {
             // Save in auxiliary variable the current block hash
             let currentHash = self.hash;
 
+            let jsonString = hex2ascii(self.body);
+            let parsedJson = JSON.parse(jsonString);
+            let body = {
+                owner: parsedJson.owner,
+                star: parsedJson.star
+            };
+            let tempBlock = new Block(body);
+
+            tempBlock.time = self.time;
+            tempBlock.height = self.height;
+            tempBlock.previousBlockHash = self.previousBlockHash;
             // Recalculate the hash of the Block
-            let newHash = SHA256(JSON.stringify(this)).toString();
+            let newHash = SHA256(JSON.stringify(tempBlock)).toString();
             // Comparing if the hashes changed
             // Returning the Block is not valid
             // Returning the Block is valid
@@ -62,7 +73,7 @@ class Block {
     getBData() {
         let self = this;
         return new Promise((resolve, reject) => {
-            let bodyJsonString = Buffer.from(self.body, 'hex').toString();
+            let bodyJsonString = hex2ascii(self.body);
             let body = JSON.parse(bodyJsonString);
 
             if (!this.isGenesis()) {
